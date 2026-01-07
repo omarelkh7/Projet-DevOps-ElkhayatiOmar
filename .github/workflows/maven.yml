@@ -1,0 +1,30 @@
+name: Java CI (Pure Java)
+
+on:
+  push:
+    branches: [ "dev", "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Compile Java File
+      run: |
+        # On compile le fichier spécifiquement là où il se trouve
+        javac devops-app/src/main/java/com/devops/projet/App.java
+        
+    - name: Run Java Program
+      run: |
+        # On exécute le programme pour vérifier le message
+        java -cp devops-app/src/main/java com.devops.projet.App
