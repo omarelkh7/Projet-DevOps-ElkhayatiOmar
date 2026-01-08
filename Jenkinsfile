@@ -1,66 +1,39 @@
-pipeline {
+pipeline{
     agent any
 
-    environment {
-        IMAGE_NAME = "devops-java-app"
-    }
-
     stages {
-
+        stage('Checkout') {
+            steps {
+                git branch: 'dev', url: 'https://github.com/omarelkh7/Projet-DevOps-ElkhayatiOmar.git'
+            }
+        }
         stage('Build') {
             steps {
-                sh '''
-                mkdir -p build
-                javac -d build devops-app/src/com/devops/projet/App.java
-                '''
+                echo 'Building...'
+                sh 'javac App.java'
+                sh 'java App'
+
             }
         }
-
-        stage('Test / Run') {
-            steps {
-                sh '''
-                java -cp build com.devops.projet.App
-                '''
-            }
-        }
-
         stage('Archive') {
             steps {
-                archiveArtifacts artifacts: 'build/**'
+                archiveArtifacts artifacts: '**/*.java', allowEmptyArchive: true
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t $IMAGE_NAME .'
-            }
-        }
-
-        stage('Deploy') {
-            when {
-                expression { currentBuild.currentResult == "SUCCESS" }
-            }
-            steps {
-                sh '''
-                docker rm -f java-container || true
-                docker run -d --name java-container $IMAGE_NAME
-                '''
-            }
-        }
     }
-
+     // Phase 4 : Livraison / Notification Slack (Consigne 4)
     post {
+        always {
+            echo 'Fin du pipeline'
+        }
         success {
-            slackSend(
-                channel: '#jenkins',
-                message: "✅ Pipeline Java réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
+            // Envoie un message vert si tout passe
+            slackSend (color: '#00FF00', message: "SUCCÈS: Le Pipeline ${env.JOB_NAME} [${env.BUILD_NUMBER}] a réussi ! Pour voir les détails : ${env.BUILD_URL}")
         }
         failure {
-            slackSend(
-                channel: '#jenkins',
-                message: "❌ Pipeline Java échoué : ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
+            // Envoie un message rouge si ça échoue
+            slackSend (color: '#FF0000', message: "ÉCHEC: Le Pipeline ${env.JOB_NAME} [${env.BUILD_NUMBER}] a échoué. Vérifiez la console : ${env.BUILD_URL}")
         }
     }
 }
